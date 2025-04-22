@@ -1,11 +1,17 @@
 # ppsspp-patapon3-AHK-assist
-An assist macro using AutoHotKey (AHK) v2 for Patapon3 playing on PPSSPP emulator.
+An assist macro using AutoHotKey (AHK) v2 for Patapon3 Overhaul mod playing on PPSSPP emulator.
 
 It was never meant to be a 500 lines macro but it is now. The code is super ugly and global variables are every where.
 If you feel like it, feel free to contribute by fork and sending pull request.
 
+I won't actively maintain this since this is just a practice project.
+
 # Usage
 Use AutoHotKey V2 to run the script. It should bring up a GUI window. Most gui components have a `?` button on the left that explains the behavior.
+
+It suports two modes: auto level and auto command.
+
+Auto level mode will auto redo a level and auto command mode will repeatedly replay commands.
 
 One note worthy thing is that the macro requires the PPSSPP window title to start with "PPSSPP". 
 
