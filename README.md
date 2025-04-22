@@ -1,6 +1,8 @@
 # ppsspp-patapon3-AHK-assist
 An assist macro using AutoHotKey (AHK) v2 for Patapon3 Overhaul mod playing on PPSSPP emulator.
 
+The macro inspect the game window, and it (almost) always hit perfect beats.
+
 It was never meant to be a 500 lines macro but it is now. The code is super ugly and global variables are every where.
 If you feel like it, feel free to contribute by fork and sending pull request.
 
