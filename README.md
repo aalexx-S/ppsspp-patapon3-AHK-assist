@@ -9,7 +9,9 @@ If you feel like it, feel free to contribute by fork and sending pull request.
 I won't actively maintain this since this is just a practice project.
 
 # Usage
-Use AutoHotKey V2 to run the script. It should bring up a GUI window. Most gui components have a `?` button on the left that explains the behavior.
+Use AutoHotKey V2 to run the script. 
+It should bring up a GUI window. Most gui components have a `?` button on the left that explains the behavior.
+I also uploaded the prebuilt exe file but you should still build it yourselves.
 
 It suports two modes: auto level and auto command.
 
