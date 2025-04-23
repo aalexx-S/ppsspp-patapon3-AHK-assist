@@ -20,6 +20,8 @@ defeated := 0
 mainGui := Gui()
 mainGui.Title := "Patapon3 assist - by aalexx.S"
 mainGui.OnEvent("Close", closeScript)
+; create a hidden edit box to be default highlighted in case input spill over to the gui when switch focus mid executing
+mainGui.Add("Edit", "w0 h0")
 ; choose window size
 mainGui.Add("Text", "Section XM","Choose window size (1-10x):")
 windowSize := mainGui.Add("Edit", "YS")
@@ -35,7 +37,7 @@ bdh.OnEvent("Click", beatDelayHelp)
 ; mute
 muteCheck := mainGui.Add("CheckBox", "Section XM", "Mute while playing? (map 'm' to mute)")
 ;; Tabs
-mainGui.tab := mainGui.Add("Tab3", "Section XS", ["Auto Level", "Auto command"])
+mainGui.tab := mainGui.Add("Tab3", "Section XS", ["Auto Level", "Auto command", "Sell Items"])
 ;; [ Auto Level ]
 mainGui.tab.UseTab(1)
 ; field select
@@ -100,6 +102,30 @@ okh := mainGui.Add("Button", "YS", "?")
 okh.OnEvent("Click", playHelp)
 okbtn.OnEvent("Click", doOkAC)
 stopbtn.OnEvent("Click", doCancel)
+;; [ Sell Items ]
+mainGui.tab.UseTab(3)
+; buttons
+sih := mainGui.Add("Button", "Section", "?")
+sih.OnEvent("Click", sellItemHelp)
+lBtn := mainGui.Add("Button","Section XS w145 h30", "L")
+lBtn.OnEvent("Click", sendL)
+rBtn := mainGui.Add("Button","YS w145 h30", "R")
+rBtn.OnEvent("Click", sendR)
+nextCatBtn := mainGui.Add("Button", "YS w105 h30", "Next Catagory")
+nextCatBtn.OnEvent("Click", nextCat)
+mainGui.Add("Text", "Section XS","")
+sellBtn := mainGui.Add("Button", "Section XS w300 h90", "Sell")
+sellBtn.OnEvent("Click", sellItem)
+sell4Btn := mainGui.Add("Button", "YS w50 h90", "Sell 4")
+sell4Btn.OnEvent("Click", sell4Item)
+sell8Btn := mainGui.Add("Button", "YS w50 h90", "Sell 8")
+sell8Btn.OnEvent("Click", sell8Item)
+nextBtn := mainGui.Add("Button", "Section XS w300 h90", "Next")
+nextBtn.OnEvent("Click", nextItem)
+scroll := mainGui.Add("Button", "YS w50 h90", "Scroll")
+scroll.OnEvent("Click", scrollDown)
+prevBtn := mainGui.Add("Button", "YS w50 h90", "Prev")
+PrevBtn.OnEvent("Click", prevItem)
 ;; misk msg
 mainGui.tab.UseTab()
 mainGui.Add("Text", "w370 XM vmsg", "Action: x")
@@ -158,6 +184,10 @@ playHelp(*) {
   MsgBox " - Press 'OK' to start playing the selected action repeatedly until press 'stop'.`n - The program auto focus on your 'PPSSPP' window.`n - Clicking off the PPSSPP window, failing to detect beats or failing combo will cause the macro to stop (unless enable retry)."
 }
 
+sellItemHelp(*) {
+  MsgBox " - Just a easier way to sell all the junks.`n - You need to map keyboard 'q' and 'e' to controller 'L' and 'R'.`n - You need to open the storage yourself.n - Don't spam the sell button..."
+}
+
 doCancel(*) {
   retry.Value := 0
   global stopPressed := 1
@@ -183,7 +213,7 @@ doOKAL(*) {
       case 0: ; loading screen or whatever
         mainGui["exmsg3"].Value := "Loading screen - keep pressing confirm"
         loop {
-          naivePlayCommand(["s"], 500)
+          naivePlayCommand(["s"], 1000)
         } until (resolveGameState() != 0 || mode != 1)
       case 1: ; in level
         mainGui["exmsg3"].Value := "In level - play level"
@@ -223,15 +253,15 @@ doOkAC(*) {
   scaleGlobal()
   if (turbo.Value == 1) {
     beatDelayValue := Floor(beatDelayValue/2)
-	btnDownDelay := Floor(btnDownDelay/2)
-	btnUpDelay := Floor(btnUpDelay/2)
+    btnDownDelay := Floor(btnDownDelay/2)
+    btnUpDelay := Floor(btnUpDelay/2)
   }
   action := selection.Text
   Loop {
     WinActivate "PPSSPP"
     muteGame()
     if (turbo.Value == 1 && turboMode == 0) {
-	  turboMode := 1
+      turboMode := 1
       send "{t down}"
       sleep 100
       send "{t up}"
@@ -246,37 +276,37 @@ doOkAC(*) {
     ; do action
     switch action {
       case "Attack":
-	    while (mode == 1) {
-	      playCommand(["d", "d", "a", "d"])
+        while (mode == 1) {
+          playCommand(["d", "d", "a", "d"])
         }
       case "Defense":
         while (mode == 1) {
-	      playCommand(["w", "w", "a", "d"])
+          playCommand(["w", "w", "a", "d"])
         }
       case "Charged_Attack":
         while (mode == 1) {
-	      playCommand(["d", "d", "w", "w", "d", "d", "a", "d"])
+          playCommand(["d", "d", "w", "w", "d", "d", "a", "d"])
         }
       case "Charged_Defense":
         while (mode == 1) {
-	      playCommand(["d", "d", "w", "w", "w", "w", "a", "d"])
+          playCommand(["d", "d", "w", "w", "w", "w", "a", "d"])
         }
       case "March":
         while (mode == 1) {
-	      playCommand(["a", "a", "a", "d"])
+          playCommand(["a", "a", "a", "d"])
         }
       case "Dance":
         while (mode == 1) {
-	      playCommand(["a", "d", "s", "w"])
+          playCommand(["a", "d", "s", "w"])
         }
       case "Charge_Then_Keep_Attack":
         playCommand(["d", "d", "w", "w"])
         while (mode == 1) {
-	      playCommand(["d", "d", "a", "d"])
+          playCommand(["d", "d", "a", "d"])
         }
       case "Walk_Attack":
         while (mode == 1) {
-	      playCommand(["a", "a", "a", "d", "d", "d", "a", "d"])
+          playCommand(["a", "a", "a", "d", "d", "d", "a", "d"])
         }
     }
     if (retry.Value == 1) {
@@ -288,7 +318,95 @@ doOkAC(*) {
   mainGui["exmsg3"].Value := "Stopped"
 }
 
+sendL(*) {
+  global mode := 1
+  WinActivate "PPSSPP"
+  sleep 50
+  naivePlayCommand(["q"], 80)
+  mode := 0
+}
+
+sendR(*) {
+  global mode := 1
+  WinActivate "PPSSPP"
+  sleep 50
+  naivePlayCommand(["e"], 80)
+  mode := 0
+}
+
+sellItem(*) {
+  sellItemX(1)
+}
+
+sell4Item(*) {
+  sellItemX(4)
+}
+
+sell8Item(*) {
+  sellItemX(8)
+}
+
+nextItem(*) {
+  global mode := 1
+  WinActivate "PPSSPP"
+  sleep 50
+  naivePlayCommand(["l"], 80)
+  mode := 0
+}
+
+scrollDown(*) {
+  global mode := 1
+  WinActivate "PPSSPP"
+  sleep 50
+  naivePlayCommand(["k", "k", "i", "i"], 80)
+  mode := 0
+}
+
+prevItem(*) {
+  global mode := 1
+  WinActivate "PPSSPP"
+  sleep 50
+  naivePlayCommand(["j"], 80)
+  mode := 0
+}
+
+nextCat(*) {
+  global mode := 1
+  WinActivate "PPSSPP"
+  sleep 50
+  naivePlayCommand(["w"], 80)
+  mode := 0
+}
+
 ; --- Functions ---
+
+sellItemX(x) {
+  global mode := 1
+  sellBtn.Enabled := false
+  sell4Btn.Enabled := false
+  sell8Btn.Enabled := false
+  ratio := windowSize.Value
+  WinActivate "PPSSPP"
+  sleep 50
+  Loop x {
+    ; if the sell confirm is already up, close it. This can happen when the action is interrupted
+    if (PixelGetColor(228 * ratio, 102 * ratio) == "0xD73E3D") {
+      naivePlayCommand(["d"], 80)
+    }
+    naivePlayCommand(["s"], 100)
+    ; needs to verify the sell confirm is up
+    if (PixelGetColor(228 * ratio, 102 * ratio) == "0xD73E3D") {
+      naivePlayCommand(["i", "s"], 80)
+      sleep 100 ; there is a delay for the confirm window to close
+    } else { ; unsellable basic item
+      naivePlayCommand(["l"], 80)
+    }
+  }
+  sellBtn.Enabled := true
+  sell4Btn.Enabled := true
+  sell8Btn.Enabled := true
+  mode := 0
+}
 
 scaleGlobal() {
   global ratio := windowSize.Value
@@ -314,7 +432,7 @@ init() {
   global turboMode
   global muted
   if (turboMode == 1) {
-	WinActivate "PPSSPP"
+    WinActivate "PPSSPP"
     sleep 100
     send "{t down}"
     sleep 50
@@ -322,7 +440,7 @@ init() {
     turboMode := 0
   }
   if (muted == 1) {
-	WinActivate "PPSSPP"
+    WinActivate "PPSSPP"
     sleep 100
     send "{m down}"
     sleep 50
@@ -334,7 +452,7 @@ init() {
 muteGame() {
   global muted
   if (muteCheck.Value == 1 && muted == 0) {
-	WinActivate "PPSSPP"
+    WinActivate "PPSSPP"
     send "{m down}"
     sleep 50
     send "{m up}"
@@ -352,11 +470,11 @@ blockUntilBeat(x, y) {
   color := PixelGetColor(x, y)
   while(color == "0x000000") {
     color := PixelGetColor(x, y)
-	delta := A_TickCount - startTime
-	if (delta > 600) {
-	  mode := 0
-	  break
-	}
+    delta := A_TickCount - startTime
+    if (delta > 600) {
+      mode := 0
+      break
+    }
   }
 }
 
@@ -369,11 +487,11 @@ blockUntilBlack(x, y) {
   color := PixelGetColor(x, y)
   while(color != "0x000000") {
     color := PixelGetColor(x, y)
-	delta := A_TickCount - startTime
-	if (delta > 600) {
-	  mode := 0
-	  break
-	}
+    delta := A_TickCount - startTime
+    if (delta > 600) {
+      mode := 0
+      break
+    }
   }
 }
 
@@ -389,25 +507,25 @@ playCommand(command) {
   global beatSyncX2
   global beatSyncY2
   Loop command.Length/4 {
-	offset := (A_Index - 1) * 4
+    offset := (A_Index - 1) * 4
     Loop 4 {
-	  if (mode == 0) {
-		break
-	  }
-	  mainGui["msg"].Value := Format("Action: {1} {2}", selection.Text, command[offset + A_Index])
-	  send "{" command[offset + A_Index] " down}"
-	  sleep btnDownDelay
-	  send "{" command[offset + A_Index] " up}"
-	  sleep btnUpDelay
-	}
-    detectBoss()
+      if (mode == 0) {
+        break
+      }
+      mainGui["msg"].Value := Format("Action: {1} {2}", selection.Text, command[offset + A_Index])
+      send "{" command[offset + A_Index] " down}"
+      sleep btnDownDelay
+      send "{" command[offset + A_Index] " up}"
+      sleep btnUpDelay
+    }
     Loop 4 {
-	  blockUntilBeat(beatSyncX2, beatSyncY2)
-	  mainGui["exmsg"].Value := "beat"
-	  blockUntilBlack(beatSyncX2, beatSyncY2)
-	  mainGui["exmsg"].Value := ""
-	}
-	sleep beatDelayValue
+      detectBoss()
+      blockUntilBeat(beatSyncX2, beatSyncY2)
+      mainGui["exmsg"].Value := "beat"
+      blockUntilBlack(beatSyncX2, beatSyncY2)
+      mainGui["exmsg"].Value := ""
+    }
+    sleep beatDelayValue
   }
 }
 
@@ -492,7 +610,8 @@ autoLevel() {
         } until (bossMode == 0 || mode != 1)
     }
   } until (mode != 1)
-  if (stopPressed == 0 && WinActive("PPSSPP")) { ; in case the level ended
+  ; in case the level ended, we want to continue the macro unless we clicking off the window
+  if (stopPressed == 0 && WinActive("PPSSPP")) {
     mode := 1
   }
 }
@@ -661,6 +780,7 @@ resetWorldMapSelection() {
 
 ;; search boss bar
 ; This should be optimized more
+; this take 0ms on my machine but I can see it being laggy for lower end pc
 detectBoss() {
   global ratio
   global bossMode
