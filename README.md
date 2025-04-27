@@ -1,12 +1,12 @@
 # ppsspp-patapon3-AHK-assist
 An assist macro using AutoHotKey (AHK) v2 for Patapon3 Overhaul mod playing on PPSSPP emulator.
 
-The macro inspect the game window, and it (almost) always hit perfect beats.
+The macro inspect the game window, and it always hit perfect beats (~99.99999%. I've seen it miss once).
 
-It was never meant to be a 500 lines macro but it is now. The code is super ugly and global variables are every where.
+It was never meant to be a 1k lines macro but it is now. The code is super ugly and global variables are every where.
 If you feel like it, feel free to contribute by fork and sending pull request.
 
-I won't actively maintain this since this is just a practice project.
+I won't actively maintain this since this is just a fun project.
 
 # Usage
 Use AutoHotKey V2 to run the script. 
@@ -25,6 +25,8 @@ If the macro didn't stop, or clicking buttons stop working, then it is probably 
 I have break point in most places I can catch but if this still happens, you have to relaunch the macro.
 
 The 2x speed toggle and mute toggle can be janky sometimes if you click around too much.
+
+The macro should work with any DPI setting. It is developed on 150% DPI and is fully tested on 100%.
 
 # Requirement/Setup
 
