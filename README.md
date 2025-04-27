@@ -28,6 +28,12 @@ The 2x speed toggle and mute toggle can be janky sometimes if you click around t
 
 # Requirement/Setup
 
+## Dependency
+
+[https://github.com/buliasz/AHKv2-Gdip/blob/master/Gdip_All.ahk](https://github.com/buliasz/AHKv2-Gdip/blob/master/Gdip_All.ahk)
+
+You need to download it and place it together with the script.
+
 ## AutoHotKey V2
 Please see [https://www.autohotkey.com/](https://www.autohotkey.com/) for the download link.
 
