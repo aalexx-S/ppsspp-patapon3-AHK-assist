@@ -605,7 +605,6 @@ autoLevel() {
   command1 := getBossCommand()
   shouldEscape := 0
   charged := 0
-  detectBoss()
   ; sync the first beat using the player input hint
   blockUntilBeat(beatSyncX1, beatSyncY1)
   mainGui["exmsg"].Value := "beat"
@@ -622,23 +621,24 @@ autoLevel() {
           }
           playCommand([command0[A_Index]])
         } until (bossMode != 0 || mode != 1)
-      case 1: ; boss on screen
+      case 1, 2: ; boss on screen, boss died
         Loop command1.Length {
           if (command1[A_Index] == "ddww" && charged == 1) {
             charged := 0
-            continue
+            A_Index := A_Index + 1 ; there msut be another command after a charge
           }
           playCommand([command1[A_Index]])
-        } until (bossMode != 1 || mode != 1)
-      while ((seenBossDied == 1 || bossMode == 2) && escapeCheck.Value == 1) {
-        seenBossDied := 0
-        shouldEscape := 1
-        playCommand(["adsw"])
-      }
-      if (shouldEscape == 1) {
-        shouldEscape := 0
-        playCommand(["dada"])
-      }
+        } until ((bossMode != 1 && escapeCheck.Value == 1) || (bossMode == 0 && escapeCheck.Value != 1) || mode != 1)
+        while ((seenBossDied == 1 || bossMode == 2) && escapeCheck.Value == 1) {
+          seenBossDied := 0
+          shouldEscape := 1
+          playCommand(["adsw"])
+        }
+        if ((seenBossDied == 1 || shouldEscape == 1 ) && escapeCheck.Value == 1) {
+          shouldEscape := 0
+          seenBossDied := 0
+          playCommand(["dada"])
+        }
     }
   } until (mode != 1)
   ; in case the level ended, we want to continue the macro unless we clicking off the window
@@ -848,10 +848,10 @@ detectBoss() {
         if (pos + A_Index >= width) {
           break
         }
-        c := Gdip_GetPixel(pBitmap, pos + A_Index, 0)
-        B := c & 0xFF
-        G := (c & 0xFF00) >> 8
-        R := (c & 0xFF0000) >> 16
+        c2 := Gdip_GetPixel(pBitmap, pos + A_Index, 0)
+        B := c2 & 0xFF
+        G := (c2 & 0xFF00) >> 8
+        R := (c2 & 0xFF0000) >> 16
         if (R < 0xF && G < 0xF && B < 0xF) { ; black won't be total black due to alpha
           mainGui["exmsg2"].Value := "Boss died"
           bossMode := 2
