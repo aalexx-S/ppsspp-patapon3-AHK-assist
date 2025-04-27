@@ -13,6 +13,9 @@ CoordMode "Pixel", "Client"
 ;; Iron door detection is annoying so it may not be a thing
 ;;-----------------------------------------------------------------------------------------------
 
+
+pToken := Gdip_Startup()
+
 stopPressed := 0
 turboMode := 0
 muted := 0
@@ -147,7 +150,7 @@ closeScript(*) {
 }
 
 chooseActionHelp(*) {
-  MsgBox " - Choose an action to play repeatedly.`n - You should map the keyboard control 'a', 'd', 's' and 'w' to 'pata', 'pon', 'don' and 'chika'.`n - The PPSSPP window has to be on the main monitor. I can't get pixel color detection to work on second or third monitors."
+  MsgBox " - Choose an action to play repeatedly.`n - You should map the keyboard control 'a', 'd', 's' and 'w' to 'pata', 'pon', 'don' and 'chika'."
 }
 
 beatDelayHelp(*) {
@@ -399,17 +402,17 @@ sellItemX(x) {
   sellBtn.Enabled := false
   sell4Btn.Enabled := false
   sell8Btn.Enabled := false
-  ratio := windowSize.Value
+  scaleGlobal()
   WinActivate "PPSSPP"
   sleep 50
   Loop x {
     ; if the sell confirm is already up, close it. This can happen when the action is interrupted
-    if (PixelGetColor(228 * ratio, 102 * ratio) == "0xD73E3D") {
+    if (gdipGetPixelColor(228 * ratio, 102 * ratio) == "0xD73E3D") {
       naivePlayCommand(["d"], 80)
     }
     naivePlayCommand(["s"], 100)
     ; needs to verify the sell confirm is up
-    if (PixelGetColor(228 * ratio, 102 * ratio) == "0xD73E3D") {
+    if (gdipGetPixelColor(228 * ratio, 102 * ratio) == "0xD73E3D") {
       naivePlayCommand(["i", "s"], 80)
       sleep 100 ; there is a delay for the confirm window to close
     } else { ; unsellable basic item
@@ -423,7 +426,7 @@ sellItemX(x) {
 }
 
 scaleGlobal() {
-  global ratio := windowSize.Value
+  global ratio := windowSize.Value * (A_ScreenDPI / 144.0)
   global beatSyncX1 := 7 * ratio
   global beatSyncY1 := 266 * ratio
   global beatSyncX2 := 5 * ratio
@@ -464,7 +467,6 @@ init() {
     send "{m up}"
   }
   muted := 0
-  global pToken := Gdip_Startup()
 }
 
 muteGame() {
@@ -485,9 +487,9 @@ blockUntilBeat(x, y) {
     return
   }
   startTime := A_TickCount
-  color := PixelGetColor(x, y)
+  color := gdipGetPixelColor(x, y)
   while(color == "0x000000") {
-    color := PixelGetColor(x, y)
+    color := gdipGetPixelColor(x, y)
     delta := A_TickCount - startTime
     if (delta > 600) {
       mode := 0
@@ -502,9 +504,9 @@ blockUntilBlack(x, y) {
     return
   }
   startTime := A_TickCount
-  color := PixelGetColor(x, y)
+  color := gdipGetPixelColor(x, y)
   while(color != "0x000000") {
-    color := PixelGetColor(x, y)
+    color := gdipGetPixelColor(x, y)
     delta := A_TickCount - startTime
     if (delta > 600) {
       mode := 0
@@ -553,22 +555,22 @@ playCommand(command) {
 ;; 3 = in camp/world map
 ;; 4 = proceed to next level
 resolveGameState() {
-  global ratio := windowSize.Value
+  global ratio
   ; this is a unique color during loot box screen
-  if (PixelGetColor(12 * ratio, 262 * ratio) == "0x35200A") {
+  if (gdipGetPixelColor(12 * ratio, 262 * ratio) == "0x35200A") {
     return 2
-  } else if (PixelGetColor(30 * ratio, 254 * ratio) == "0xEF4748" && PixelGetColor(36 * ratio, 254 * ratio) == "0xEF4748") { ; the dpad input hint at camp or world map
+  } else if (gdipGetPixelColor(30 * ratio, 254 * ratio) == "0xEF4748" && gdipGetPixelColor(36 * ratio, 254 * ratio) == "0xEF4748") { ; the dpad input hint at camp or world map
     return 3
-  } else if (PixelGetColor(9 * ratio, 251 * ratio) == "0xEF4748") { ; the up/down dpad input hint
-    if (PixelGetColor(26 * ratio, 249 * ratio) != "0x000000" && PixelGetColor(26 * ratio, 252 * ratio) != "0x000000" && PixelGetColor(26 * ratio, 258 * ratio) != "0x000000") { ; the scroll icon
+  } else if (gdipGetPixelColor(9 * ratio, 251 * ratio) == "0xEF4748") { ; the up/down dpad input hint
+    if (gdipGetPixelColor(26 * ratio, 249 * ratio) != "0x000000" && gdipGetPixelColor(26 * ratio, 252 * ratio) != "0x000000" && gdipGetPixelColor(26 * ratio, 258 * ratio) != "0x000000") { ; the scroll icon
       return 0 ; this is the end result exp page
     }
     return 3 ; could be the barrack or level selection, no need to distinguish them
-  } else if (PixelGetColor(165 * ratio, 263 * ratio) != "0x000000" && PixelGetColor(108 * ratio, 263 * ratio) == "0x000000" && PixelGetColor(243 * ratio, 263 * ratio) == "0x000000") { ; command input hint
+  } else if (gdipGetPixelColor(165 * ratio, 263 * ratio) != "0x000000" && gdipGetPixelColor(108 * ratio, 263 * ratio) == "0x000000" && gdipGetPixelColor(243 * ratio, 263 * ratio) == "0x000000") { ; command input hint
     return 1
-  } else if (PixelGetColor(170 * ratio, 89 * ratio) == "0xFFEDD2" && PixelGetColor(304 * ratio, 126 * ratio) == "0xFFEDD2") {
+  } else if (gdipGetPixelColor(170 * ratio, 89 * ratio) == "0xFFEDD2" && gdipGetPixelColor(304 * ratio, 126 * ratio) == "0xFFEDD2") {
     return 4
-  } else if (PixelGetColor(9 * ratio, 251 * ratio) == "0x000000") { ; highly possible that this is a loading screen or whatever
+  } else if (gdipGetPixelColor(9 * ratio, 251 * ratio) == "0x000000") { ; highly possible that this is a loading screen or whatever
     return 0
   }
   return 0
@@ -692,7 +694,7 @@ resolveFieldSelectSequence() {
 ;; something big?
 somethingBig() {
   global ratio
-  if (PixelGetColor(188 * ratio, 84 * ratio) == "0xD59095" && PixelGetColor(288 * ratio, 82 * ratio) == "0xD59095") {
+  if (gdipGetPixelColor(188 * ratio, 84 * ratio) == "0xD59095" && gdipGetPixelColor(288 * ratio, 82 * ratio) == "0xD59095") {
     return 1
   }
   return 0
@@ -814,33 +816,18 @@ resetWorldMapSelection() {
 detectBoss() {
   global bossMode
   global bossDetectX1, bossDetectY1, bossDetectX2, bossDetectY2, checkDied
-  /*
-  if (PixelSearch(&x, &y, bossDetectX1, bossDetectY1, bossDetectX2, bossDetectY2, "0xCFCFCF", 32)) {
-    mainGui["exmsg2"].Value := "Boss on screen"
-    bossMode := 1
-    if (PixelSearch(&x2, &y2, x, y, x + checkDied, y, "0x000000", 0) && PixelGetColor(x, y) != "0x000000" ) { ; boss might just died
-      bossMode := 2
-      mainGui["exmsg2"].Value := "Boss died"
-    }
-  } else {
-    mainGui["exmsg2"].Value := ""
-    bossMode := 0
-  }
-  */
-  collorArr := []
   WinGetClientPos &X, &Y, &W, &H, "PPSSPP"
   width := bossDetectX2 - bossDetectX1
   pBitmap := Gdip_BitmapFromScreen(X + bossDetectX1 "|" Y + bossDetectY1 "|" width "|" 1)
   ; Gdip_SaveBitmapToFile(pBitmap, "test.png")
-  Gdip_GetImageDimensions(pBitmap, &X, &Y)
-  mainGui["exmsg2"].Value := " "
   bossMode := 0
+  mainGui["exmsg2"].Value := ""
   Loop width {
     c := Gdip_GetPixel(pBitmap, A_Index - 1, 0) ; this f'ing thing starts indexing from 0
     B := c & 0xFF
     G := (c & 0xFF00) >> 8
     R := (c & 0xFF0000) >> 16
-    if (Abs(R - 0xCF) < 32 && Abs(G - 0xCF) < 32 && Abs(B - 0xCF) < 32) {
+    if (0xFF - R < 0x64 && 0xFF - G < 0x64 && 0xFF - B < 0x64) {
       mainGui["exmsg2"].Value := "Boss on screen"
       bossMode := 1
       pos := A_Index - 1
@@ -863,4 +850,14 @@ detectBoss() {
     }
   }
   Gdip_DisposeImage(pBitmap)
+}
+
+gdipGetPixelColor(tx, ty) {
+  tx := Round(tx)
+  ty := Round(ty)
+  WinGetClientPos &X, &Y, &W, &H, "PPSSPP"
+  pBitmap := Gdip_BitmapFromScreen(X + tx "|" Y + ty "|" 1 "|" 1)
+  c := Gdip_GetPixel(pBitmap, 0, 0)
+  Gdip_DisposeImage(pBitmap)
+  return Format("0x{:06X}", c & 0xFFFFFF)
 }
