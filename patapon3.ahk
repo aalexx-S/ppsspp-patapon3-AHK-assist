@@ -1,5 +1,8 @@
 ﻿#Requires AutoHotkey v2.0
 
+; https://github.com/buliasz/AHKv2-Gdip/blob/master/Gdip_All.ahk
+#include Gdip_All.ahk
+
 CoordMode "Pixel", "Client"
 
 ;;-----------------------------------------------------------------------------------------------
@@ -16,6 +19,7 @@ muted := 0
 bossMode := 0
 mode := 0
 defeated := 0
+seenBossDied := 0
 
 mainGui := Gui()
 mainGui.Title := "Patapon3 assist - by aalexx.S"
@@ -69,8 +73,8 @@ mainGui.Add("Text", "YS", "after failing quest")
 resetCount := mainGui.Add("Edit", "YS")
 mainGui.Add("UpDown", "vMyUpDown6 Range1-10", 5)
 mainGui.Add("Text", "YS", "time(s).")
-; escape after boss leave screen
-escapeCheck := mainGui.Add("CheckBox", "Section XS", "Escape after boss dissapear from screen?")
+; dance-escape after closest boss died
+escapeCheck := mainGui.Add("CheckBox", "Section XS", "Dance-escape after the closest boss died? (assumes going right)")
 ; stop when spot something big
 somethingBigSpotted := mainGui.Add("CheckBox", "Section XS", "Stop when something big spotted?")
 ; ok/stop
@@ -80,6 +84,8 @@ oklh := mainGui.Add("Button", "YS", "?")
 oklh.OnEvent("Click", okyLevelHelp)
 oklevelbtn.OnEvent("Click", doOkAL)
 stoplevelbtn.OnEvent("Click", doCancel)
+debugBtn := mainGui.Add("Button", "YS", "Debug")
+debugBtn.OnEvent("Click", doDebug)
 ;; [ Auto Command ]
 mainGui.tab.UseTab(2)
 ; choose action
@@ -194,6 +200,14 @@ doCancel(*) {
   init()
 }
 
+doDebug(*) {
+  init()
+  scaleGlobal()
+  WinActivate "PPSSPP"
+  sleep 100
+  detectBoss()
+}
+
 ; --- Main Logic ---
 
 doOKAL(*) {
@@ -277,36 +291,36 @@ doOkAC(*) {
     switch action {
       case "Attack":
         while (mode == 1) {
-          playCommand(["d", "d", "a", "d"])
+          playCommand(["ddad"])
         }
       case "Defense":
         while (mode == 1) {
-          playCommand(["w", "w", "a", "d"])
+          playCommand(["wwad"])
         }
       case "Charged_Attack":
         while (mode == 1) {
-          playCommand(["d", "d", "w", "w", "d", "d", "a", "d"])
+          playCommand(["ddww", "ddad"])
         }
       case "Charged_Defense":
         while (mode == 1) {
-          playCommand(["d", "d", "w", "w", "w", "w", "a", "d"])
+          playCommand(["ddww", "wwad"])
         }
       case "March":
         while (mode == 1) {
-          playCommand(["a", "a", "a", "d"])
+          playCommand(["aaad"])
         }
       case "Dance":
         while (mode == 1) {
-          playCommand(["a", "d", "s", "w"])
+          playCommand(["adsw"])
         }
       case "Charge_Then_Keep_Attack":
-        playCommand(["d", "d", "w", "w"])
+        playCommand(["ddww"])
         while (mode == 1) {
-          playCommand(["d", "d", "a", "d"])
+          playCommand(["ddad"])
         }
       case "Walk_Attack":
         while (mode == 1) {
-          playCommand(["a", "a", "a", "d", "d", "d", "a", "d"])
+          playCommand(["aaad", "ddad"])
         }
     }
     if (retry.Value == 1) {
@@ -418,9 +432,11 @@ scaleGlobal() {
   global bossDetectY1 := 236 * ratio
   global bossDetectX2 := 456 * ratio
   global bossDetectY2 := 236 * ratio
+  global checkDied := 1 * ratio + 1
 }
 
 init() {
+  ; init gui
   mainGui["msg"].Value := "Action: x"
   mainGui["exmsg"].Value := ""
   mainGui["exmsg2"].Value := ""
@@ -429,6 +445,7 @@ init() {
   global defeated := 0
   global mode := 0
   global bossMode := 0
+  global seenBossDied := 0
   global turboMode
   global muted
   if (turboMode == 1) {
@@ -447,6 +464,7 @@ init() {
     send "{m up}"
   }
   muted := 0
+  global pToken := Gdip_Startup()
 }
 
 muteGame() {
@@ -496,7 +514,7 @@ blockUntilBlack(x, y) {
 }
 
 ;; play beats using pixel color. This is the core of the script.
-;; the input command length has to be divisible by 4. I didn't explicitly check it
+;; the input command needs to follow the format [ "ddad", "aaad", ... ]
 ;; counts beats to sync timing so that the random ppsspp/patapon3 delay won't cumulate over time
 ;; Lag spike with in the same command will still affect the timing tho
 playCommand(command) {
@@ -506,16 +524,15 @@ playCommand(command) {
   global btnUpDelay
   global beatSyncX2
   global beatSyncY2
-  Loop command.Length/4 {
-    offset := (A_Index - 1) * 4
-    Loop 4 {
+  Loop command.Length {
+    Loop Parse command[A_Index] {
       if (mode == 0) {
         break
       }
-      mainGui["msg"].Value := Format("Action: {1} {2}", selection.Text, command[offset + A_Index])
-      send "{" command[offset + A_Index] " down}"
+      mainGui["msg"].Value := Format("Action: {1} {2}", selection.Text, A_LoopField)
+      send "{" A_LoopField " down}"
       sleep btnDownDelay
-      send "{" command[offset + A_Index] " up}"
+      send "{" A_LoopField " up}"
       sleep btnUpDelay
     }
     Loop 4 {
@@ -560,33 +577,35 @@ resolveGameState() {
 getNoBossCommand() {
   switch levelNoBoss.Text {
     case "March-charged-attack":
-      return [["a", "a", "a", "d"], ["d", "d", "w", "w"], ["d", "d", "a", "d"]]
+      return ["aaad", "ddww", "ddad"]
     case "March-attack":
-      return [["a", "a", "a", "d"], ["d", "d", "a", "d"]]
+      return ["aaad", "ddad"]
     case "Jump-march-attack":
-      return [["s", "s", "w", "w"], ["a", "a", "a", "d"], ["d", "d", "a", "d"]]
+      return ["ssww", "aaad", "ddad"]
   }
-  return [["a", "a", "a", "d"], ["d", "d", "a", "d"]]
+  return ["aaad", "ddad"]
 }
 
 getBossCommand() {
   switch levelBoss.Text {
     case "Charged-attack":
-      return [["d", "d", "w", "w"], ["d", "d", "a", "d"]]
+      return ["ddww", "ddad"]
     case "Attack":
-      return [["d", "d", "a", "d"]]
+      return ["ddad"]
   }
-  return [["d", "d", "a", "d"]]
+  return ["dddad"]
 }
 
 ;; auto plays a level
 autoLevel() {
   ; boss state update needs to happen within a beat to detect salamender dying
-  global bossMode
+  global bossMode, mode, seenBossDied
   global mode
   command0 := getNoBossCommand()
   command1 := getBossCommand()
-  seenBoss := 0
+  shouldEscape := 0
+  charged := 0
+  detectBoss()
   ; sync the first beat using the player input hint
   blockUntilBeat(beatSyncX1, beatSyncY1)
   mainGui["exmsg"].Value := "beat"
@@ -596,18 +615,30 @@ autoLevel() {
   Loop {
     switch bossMode {
       case 0: ; no boss
-        if (escapeCheck.Value == 1 && seenBoss == 1) {
-          playCommand(["d", "a", "d", "a"])
-        }
-        seenBoss := 0
         Loop command0.Length {
-          playCommand(command0[A_Index])
+          charged := 0
+          if (command0[A_Index] == "ddww") {
+            charged := 1
+          }
+          playCommand([command0[A_Index]])
         } until (bossMode != 0 || mode != 1)
-      case 1, 2: ; boss on screen, 2 is reserved for salamander detection
-        seenBoss := 1
+      case 1: ; boss on screen
         Loop command1.Length {
-          playCommand(command1[A_Index])
-        } until (bossMode == 0 || mode != 1)
+          if (command1[A_Index] == "ddww" && charged == 1) {
+            charged := 0
+            continue
+          }
+          playCommand([command1[A_Index]])
+        } until (bossMode != 1 || mode != 1)
+      while ((seenBossDied == 1 || bossMode == 2) && escapeCheck.Value == 1) {
+        seenBossDied := 0
+        shouldEscape := 1
+        playCommand(["adsw"])
+      }
+      if (shouldEscape == 1) {
+        shouldEscape := 0
+        playCommand(["dada"])
+      }
     }
   } until (mode != 1)
   ; in case the level ended, we want to continue the macro unless we clicking off the window
@@ -779,17 +810,57 @@ resetWorldMapSelection() {
 }
 
 ;; search boss bar
-; This should be optimized more
-; this take 0ms on my machine but I can see it being laggy for lower end pc
+; optimized with gdip library.
 detectBoss() {
-  global ratio
   global bossMode
-  global mode
+  global bossDetectX1, bossDetectY1, bossDetectX2, bossDetectY2, checkDied
+  /*
   if (PixelSearch(&x, &y, bossDetectX1, bossDetectY1, bossDetectX2, bossDetectY2, "0xCFCFCF", 32)) {
     mainGui["exmsg2"].Value := "Boss on screen"
     bossMode := 1
+    if (PixelSearch(&x2, &y2, x, y, x + checkDied, y, "0x000000", 0) && PixelGetColor(x, y) != "0x000000" ) { ; boss might just died
+      bossMode := 2
+      mainGui["exmsg2"].Value := "Boss died"
+    }
   } else {
     mainGui["exmsg2"].Value := ""
     bossMode := 0
   }
+  */
+  collorArr := []
+  WinGetClientPos &X, &Y, &W, &H, "PPSSPP"
+  width := bossDetectX2 - bossDetectX1
+  pBitmap := Gdip_BitmapFromScreen(X + bossDetectX1 "|" Y + bossDetectY1 "|" width "|" 1)
+  ; Gdip_SaveBitmapToFile(pBitmap, "test.png")
+  Gdip_GetImageDimensions(pBitmap, &X, &Y)
+  mainGui["exmsg2"].Value := " "
+  bossMode := 0
+  Loop width {
+    c := Gdip_GetPixel(pBitmap, A_Index - 1, 0) ; this f'ing thing starts indexing from 0
+    B := c & 0xFF
+    G := (c & 0xFF00) >> 8
+    R := (c & 0xFF0000) >> 16
+    if (Abs(R - 0xCF) < 32 && Abs(G - 0xCF) < 32 && Abs(B - 0xCF) < 32) {
+      mainGui["exmsg2"].Value := "Boss on screen"
+      bossMode := 1
+      pos := A_Index - 1
+      Loop checkDied {
+        if (pos + A_Index >= width) {
+          break
+        }
+        c := Gdip_GetPixel(pBitmap, pos + A_Index, 0)
+        B := c & 0xFF
+        G := (c & 0xFF00) >> 8
+        R := (c & 0xFF0000) >> 16
+        if (R < 0xF && G < 0xF && B < 0xF) { ; black won't be total black due to alpha
+          mainGui["exmsg2"].Value := "Boss died"
+          bossMode := 2
+          global seenBossDied := 1
+          break
+        }
+      }
+      break
+    }
+  }
+  Gdip_DisposeImage(pBitmap)
 }
