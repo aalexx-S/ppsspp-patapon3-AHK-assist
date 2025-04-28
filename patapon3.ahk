@@ -24,7 +24,11 @@ mode := 0
 defeated := 0
 seenBossDied := 0
 
+
+try dac := DllCall("SetThreadDpiAwarenessContext", 'ptr', -2, 'ptr')
 mainGui := Gui()
+IsSet(dac) && DllCall("SetThreadDpiAwarenessContext", 'ptr', dac, 'ptr')
+
 mainGui.Title := "Patapon3 assist - by aalexx.S"
 mainGui.OnEvent("Close", closeScript)
 ; create a hidden edit box to be default highlighted in case input spill over to the gui when switch focus mid executing
@@ -208,7 +212,6 @@ doDebug(*) {
   scaleGlobal()
   WinActivate "PPSSPP"
   sleep 100
-  detectBoss()
 }
 
 ; --- Main Logic ---
@@ -426,7 +429,13 @@ sellItemX(x) {
 }
 
 scaleGlobal() {
-  global ratio := windowSize.Value * (A_ScreenDPI / 144.0)
+  try dac := DllCall("SetThreadDpiAwarenessContext", 'ptr', -2, 'ptr')
+  DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
+  WinGetClientPos &X, &Y, &W, &H, "PPSSPP"
+  hMonitor := DllCall("MonitorFromPoint", "UInt64", (X & 0xFFFFFFFF) | (Y << 32), "UInt", 2, "ptr")
+  DllCall("Shcore\GetDpiForMonitor", "Ptr", hMonitor, "UInt", 0, "UInt*", &dpiX := 0, "UInt*", &dpiY := 0, "UInt")
+  IsSet(dac) && DllCall("SetThreadDpiAwarenessContext", 'ptr', dac, 'ptr')
+  global ratio := windowSize.Value * (dpiX / 144.0) ; I developed on dpi 150% :(
   global beatSyncX1 := 7 * ratio
   global beatSyncY1 := 266 * ratio
   global beatSyncX2 := 5 * ratio
