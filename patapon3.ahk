@@ -771,10 +771,10 @@ selectLevel() {
     naivePlayCommand(["s"], 10)
     sleep 3000 ; wait for dlc data to load
   }
-  naivePlayCommand(fs, 150)
-  naivePlayCommand(["s"], 150)
+  naivePlayCommand(fs, 180)
+  naivePlayCommand(["s"], 180)
   loop topdownLevel.Value - 1 {
-    naivePlayCommand(["k"], 150)
+    naivePlayCommand(["k"], 180)
   }
   if (mode == 0) {
     return
