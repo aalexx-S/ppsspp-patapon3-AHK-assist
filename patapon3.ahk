@@ -721,7 +721,7 @@ resolveFieldSelectSequence() {
 ;; something big?
 somethingBig() {
   global ratio
-  if (gdipGetPixelColor(188 * ratio, 84 * ratio) == "0xD59095" && gdipGetPixelColor(288 * ratio, 82 * ratio) == "0xD59095") {
+  if (checkColor(gdipGetPixelColor(188 * ratio, 84 * ratio), "0xD59095") == 1 && checkColor(gdipGetPixelColor(288 * ratio, 82 * ratio), "0xD59095") == 1) {
     return 1
   }
   return 0
