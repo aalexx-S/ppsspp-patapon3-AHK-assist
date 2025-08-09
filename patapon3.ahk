@@ -557,6 +557,24 @@ playCommand(command) {
   }
 }
 
+;; Check if two colors are close to each other
+;; return 1 if close or 0 otherwise
+checkColor(a, b) {
+  DELTA := 48
+  ac := a + 0
+  B1 := ac & 0xFF
+  G1 := (ac & 0xFF00) >> 8
+  R1 := (ac & 0xFF0000) >> 16
+  bc := b + 0
+  B2 := bc & 0xFF
+  G2 := (bc & 0xFF00) >> 8
+  R2 := (bc & 0xFF0000) >> 16
+  if (Abs(B1 - B2) < DELTA && Abs(R1 - R2) < DELTA && Abs(G1 - G2) < DElTA) {
+    return 1
+  }
+  return 0
+}
+
 ;; resolveGameState
 ;; 0 = Can't determine or a loading screen. Just keep pressing confirm.
 ;; 1 = in level
@@ -566,20 +584,20 @@ playCommand(command) {
 resolveGameState() {
   global ratio
   ; this is a unique color during loot box screen
-  if (gdipGetPixelColor(12 * ratio, 262 * ratio) == "0x35200A") {
+  if (checkColor(gdipGetPixelColor(12 * ratio, 262 * ratio), "0x35200A") == 1) {
     return 2
-  } else if (gdipGetPixelColor(30 * ratio, 254 * ratio) == "0xEF4748" && gdipGetPixelColor(36 * ratio, 254 * ratio) == "0xEF4748") { ; the dpad input hint at camp or world map
+  } else if (checkColor(gdipGetPixelColor(30 * ratio, 254 * ratio), "0xEF4748") == 1 && checkColor(gdipGetPixelColor(36 * ratio, 254 * ratio), "0xEF4748") == 1) { ; the dpad input hint at camp or world map
     return 3
-  } else if (gdipGetPixelColor(9 * ratio, 251 * ratio) == "0xEF4748") { ; the up/down dpad input hint
-    if (gdipGetPixelColor(26 * ratio, 249 * ratio) != "0x000000" && gdipGetPixelColor(26 * ratio, 252 * ratio) != "0x000000" && gdipGetPixelColor(26 * ratio, 258 * ratio) != "0x000000") { ; the scroll icon
+  } else if (checkColor(gdipGetPixelColor(9 * ratio, 251 * ratio), "0xEF4748") == 1) { ; the up/down dpad input hint
+    if (checkColor(gdipGetPixelColor(26 * ratio, 249 * ratio), "0x000000") == 0 && checkColor(gdipGetPixelColor(26 * ratio, 252 * ratio), "0x000000") == 0 && checkColor(gdipGetPixelColor(26 * ratio, 258 * ratio), "0x000000") == 0) { ; the scroll icon
       return 0 ; this is the end result exp page
     }
     return 3 ; could be the barrack or level selection, no need to distinguish them
-  } else if (gdipGetPixelColor(165 * ratio, 263 * ratio) != "0x000000" && gdipGetPixelColor(108 * ratio, 263 * ratio) == "0x000000" && gdipGetPixelColor(243 * ratio, 263 * ratio) == "0x000000") { ; command input hint
+  } else if (checkColor(gdipGetPixelColor(165 * ratio, 263 * ratio), "0x000000") == 0 && checkColor(gdipGetPixelColor(108 * ratio, 263 * ratio), "0x000000") == 1 && checkColor(gdipGetPixelColor(243 * ratio, 263 * ratio), "0x000000") == 1) { ; command input hint
     return 1
-  } else if (gdipGetPixelColor(170 * ratio, 89 * ratio) == "0xFFEDD2" && gdipGetPixelColor(304 * ratio, 126 * ratio) == "0xFFEDD2") {
+  } else if (checkColor(gdipGetPixelColor(170 * ratio, 89 * ratio), "0xFFEDD2") == 1 && checkColor(gdipGetPixelColor(304 * ratio, 126 * ratio), "0xFFEDD2") == 1) {
     return 4
-  } else if (gdipGetPixelColor(9 * ratio, 251 * ratio) == "0x000000") { ; highly possible that this is a loading screen or whatever
+  } else if (checkColor(gdipGetPixelColor(9 * ratio, 251 * ratio), "0x000000") == 1) { ; highly possible that this is a loading screen or whatever
     return 0
   }
   return 0
@@ -772,6 +790,7 @@ selectLevel() {
     sleep 3000 ; wait for dlc data to load
   }
   naivePlayCommand(fs, 180)
+  sleep 180 ; wait for field change animation to finish. it can take more time occasionally...
   naivePlayCommand(["s"], 180)
   loop topdownLevel.Value - 1 {
     naivePlayCommand(["k"], 180)
